@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">GPSExample</string>
+    <string name="start">开始</string>
+    <string name="display_default_text">0</string>
+    <string name="allow">允许</string>
+    <string name="cancel">取消</string>
+    <string name="permission_location_rationale">记录路径需要位置权限，没有权限将无法记录</string>
+    <string name="get_permission_fail">获取权限失败</string>
+    <string name="goto_system_setting">打开系统设置</string>
+    <string name="not_location_service">定位服务未打开</string>
+    <string name="contentTitle">距离</string>
+    <string name="stop">停止</string>
+</resources>

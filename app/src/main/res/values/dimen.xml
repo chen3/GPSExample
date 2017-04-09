@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="circleBorderWidth">10dp</dimen>
+    <dimen name="titleMarginTop">100dp</dimen>
+    <dimen name="displayDistanceTextSize">30sp</dimen>
+    <dimen name="circleHeight">200dp</dimen>
+    <dimen name="circleWidth">@dimen/circleHeight</dimen>
+    <dimen name="titleTextSize">20sp</dimen>
+</resources>
