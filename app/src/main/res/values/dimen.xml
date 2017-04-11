@@ -6,4 +6,6 @@
     <dimen name="circleHeight">200dp</dimen>
     <dimen name="circleWidth">@dimen/circleHeight</dimen>
     <dimen name="titleTextSize">20sp</dimen>
+    <dimen name="gpsSatellitesNumberTextSize">20sp</dimen>
+    <dimen name="gpsSatellitesNumberMargin">10dp</dimen>
 </resources>

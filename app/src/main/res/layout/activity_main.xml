@@ -11,6 +11,18 @@
     tools:context="cn.qiditu.gpsexample.MainActivity">
 
     <TextView
+        android:id="@+id/gpsSatellitesNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/gpsSatellitesNumberDisplayDefault"
+        android:textSize="@dimen/gpsSatellitesNumberTextSize"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginRight="@dimen/gpsSatellitesNumberMargin"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="@dimen/gpsSatellitesNumberMargin"
+        android:textColor="@android:color/white" />
+
+    <TextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
