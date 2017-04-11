@@ -104,9 +104,8 @@ public class Timer {
     public void stop() {
         Boolean value = active.get();
         if(value == null ? false : value) {
-            return;
+            handler.removeCallbacks(runnable);
         }
-        handler.removeCallbacks(runnable);
     }
 
     private Handler handler = new Handler();
