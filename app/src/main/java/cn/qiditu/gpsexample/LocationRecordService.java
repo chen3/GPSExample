@@ -28,7 +28,7 @@ import cn.qiditu.signalslot.slots.Slot0;
 import cn.qiditu.utility.Lazy;
 import cn.qiditu.utility.Timer;
 
-class LocationRecordService extends Service {
+public class LocationRecordService extends Service {
 
     public LocationRecordService() {
         timer.writeInterval.set(2000);
@@ -47,8 +47,10 @@ class LocationRecordService extends Service {
         return new LocalBinder();
     }
 
-    class LocalBinder extends Binder {
-        LocationRecordService getService() {
+    @SuppressWarnings("WeakerAccess")
+    public class LocalBinder extends Binder {
+        @SuppressWarnings("WeakerAccess")
+        public LocationRecordService getService() {
             return LocationRecordService.this;
         }
     }
