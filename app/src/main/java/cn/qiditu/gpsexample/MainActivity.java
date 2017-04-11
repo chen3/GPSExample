@@ -31,6 +31,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import cn.qiditu.property.Property;
 import cn.qiditu.property.WriteProperty;
+import cn.qiditu.signalslot.slots.Slot0;
 import cn.qiditu.signalslot.slots.Slot1;
 import permissions.dispatcher.NeedsPermission;
 import permissions.dispatcher.OnNeverAskAgain;
@@ -80,9 +81,18 @@ public class MainActivity extends AppCompatActivity {
                 };
                 service.gpsSatellitesNumber.changed.connect(slotGpsSatellitesNumber);
                 slotGpsSatellitesNumber.accept(service.gpsSatellitesNumber.get());
+
+                service.gpsLocationTimeOut.connect(new Slot0() {
+                    @Override
+                    public void accept() {
+                        MainActivity.this.locationTimeOutDialog.show();
+                    }
+                });
             }
-        });
+        }, 1);
     }
+
+    private AlertDialog.Builder locationTimeOutDialog;
 
     private static final DecimalFormat distanceFormat = new DecimalFormat("0.00");
 
@@ -113,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
     private void init() {
         serviceIntent = new Intent(this, LocationRecordService.class);
         notLocationServiceDialog = new AlertDialog.Builder(this)
+                .setMessage(R.string.not_location_service)
                 .setPositiveButton(R.string.goto_system_setting,
                         new DialogInterface.OnClickListener() {
                             @Override
@@ -122,8 +133,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         })
                 .setNegativeButton(R.string.cancel, null)
-                .setCancelable(false)
-                .setMessage(R.string.not_location_service);
+                .setCancelable(false);
         serviceNotFound = Snackbar.make(rootLayout, R.string.serviceNotFound, Snackbar.LENGTH_LONG);
         permissionFail =
                 Snackbar.make(rootLayout, R.string.get_permission_fail,
@@ -141,6 +151,17 @@ public class MainActivity extends AppCompatActivity {
                             MainActivity.this.startActivity(localIntent);
                         }
                 });
+        locationTimeOutDialog = new AlertDialog.Builder(this)
+                .setMessage(R.string.gpsLocationServiceTimeOut)
+                .setPositiveButton(R.string.startWithNotTimeOut,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(@NonNull DialogInterface dialog, int which) {
+                                MainActivityPermissionsDispatcher.
+                                        getLocationWithNotTimeOutWithCheck(MainActivity.this);
+                            }
+                        })
+                .setNegativeButton(R.string.ok, null);
     }
 
     private final WriteProperty<LocationRecordService> writeService = new WriteProperty<>();
@@ -200,6 +221,17 @@ public class MainActivity extends AppCompatActivity {
         else {
             MainActivityPermissionsDispatcher.getLocationWithCheck(this);
         }
+    }
+
+    @NeedsPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    @SuppressWarnings("MissingPermission")
+    void getLocationWithNotTimeOut() {
+        LocationRecordService tService = service.get();
+        if(tService == null) {
+            serviceNotFound.show();
+            return;
+        }
+        tService.startWithNotTimeOut();
     }
 
     @NeedsPermission(Manifest.permission.ACCESS_FINE_LOCATION)

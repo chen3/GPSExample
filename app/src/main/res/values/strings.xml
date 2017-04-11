@@ -13,4 +13,7 @@
     <string name="serviceNotFound">服务未找到</string>
     <string name="gpsSatellitesNumberDisplayDefault">当前卫星数量为：0</string>
     <string name="gpsSatellitesNumberDisplay">当前卫星数量为：%1$s</string>
+    <string name="gpsLocationServiceTimeOut">定位超时，定位已停止</string>
+    <string name="ok">确定</string>
+    <string name="startWithNotTimeOut">重新开始并关闭超时检测</string>
 </resources>

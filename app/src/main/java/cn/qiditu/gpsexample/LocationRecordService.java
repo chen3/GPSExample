@@ -24,18 +24,31 @@ import java.util.Iterator;
 import cn.qiditu.property.Property;
 import cn.qiditu.property.WriteProperty;
 import cn.qiditu.signalslot.signals.Signal0;
+import cn.qiditu.signalslot.slots.Slot0;
 import cn.qiditu.utility.Lazy;
+import cn.qiditu.utility.Timer;
 
-public class LocationRecordService extends Service {
+class LocationRecordService extends Service {
+
+    public LocationRecordService() {
+        timer.writeInterval.set(2000);
+        timer.writeSingleShot.set(true);
+        timer.timeOut.connect(new Slot0() {
+            @Override
+            public void accept() {
+                LocationRecordService.this.stop();
+            }
+        });
+        timer.timeOut.connect(gpsLocationTimeOut);
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
         return new LocalBinder();
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public class LocalBinder extends Binder {
-        public LocationRecordService getService() {
+    class LocalBinder extends Binder {
+        LocationRecordService getService() {
             return LocationRecordService.this;
         }
     }
@@ -46,13 +59,23 @@ public class LocationRecordService extends Service {
     private final WriteProperty<Float> writeDistance = new WriteProperty<>();
     public final Property<Float> distance = new Property<>(writeDistance, 0f);
 
-    private Location lastLocation;
+    @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    public void startWithNotTimeOut() {
+        start(false);
+    }
 
-    public final Signal0 gpsLocationTimeOut = new Signal0(this);
-
-    @SuppressWarnings({"MissingPermission", "deprecation"})
     @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     public void start() {
+        start(true);
+    }
+
+    public final Signal0 gpsLocationTimeOut = new Signal0(this);
+    private Timer timer = new Timer();
+
+    private Location lastLocation;
+
+    @SuppressWarnings({"MissingPermission", "deprecation"})
+    private void start(boolean timeOut) {
         // 获取位置管理服务
         LocationManager locationManager =
                 (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
@@ -63,7 +86,7 @@ public class LocationRecordService extends Service {
         updateLocation(lastLocation);
         // 设置监听器，自动更新的最小时间为间隔N秒(1秒为1*1000，这样写主要为了方便)或最小位移变化超过N米
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0,
-                                                locationListener);
+                locationListener);
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             locationManager.registerGnssStatusCallback(gnssStatusCallback.get());
         }
@@ -71,6 +94,9 @@ public class LocationRecordService extends Service {
             locationManager.addGpsStatusListener(gpsStatusListener);
         }
         writeIsRunning.set(true);
+        if(timeOut) {
+            timer.start();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -84,6 +110,10 @@ public class LocationRecordService extends Service {
         }
         else {
             locationManager.removeGpsStatusListener(gpsStatusListener);
+        }
+        Boolean value = timer.active.get();
+        if(value == null ? false : value) {
+            timer.stop();
         }
         writeIsRunning.set(false);
     }
