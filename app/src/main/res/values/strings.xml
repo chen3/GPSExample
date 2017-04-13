@@ -8,7 +8,7 @@
     <string name="get_permission_fail">获取权限失败</string>
     <string name="goto_system_setting">打开系统设置</string>
     <string name="not_location_service">定位服务未打开</string>
-    <string name="contentTitle">距离</string>
+    <string name="contentTitle">距离(米)</string>
     <string name="stop">停止</string>
     <string name="serviceNotFound">服务未找到</string>
     <string name="gpsSatellitesNumberDisplayDefault">当前卫星数量为：0</string>
@@ -16,4 +16,5 @@
     <string name="gpsLocationServiceTimeOut">定位超时，定位已停止</string>
     <string name="ok">确定</string>
     <string name="startWithNotTimeOut">重新开始并关闭超时检测</string>
+    <string name="movingDistanceMoreThanThreeKM">移动距离超过3公里</string>
 </resources>

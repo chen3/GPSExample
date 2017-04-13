@@ -25,6 +25,7 @@ public final class Lazy<T> {
         }
     }
 
+    @Nullable
     private synchronized T compute() {
         if (lazyFunc != null) {
             value = lazyFunc.init();
