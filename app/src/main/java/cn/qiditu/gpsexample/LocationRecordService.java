@@ -1,6 +1,9 @@
 package cn.qiditu.gpsexample;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +17,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.annotation.RequiresPermission;
@@ -25,10 +29,15 @@ import cn.qiditu.property.Property;
 import cn.qiditu.property.WriteProperty;
 import cn.qiditu.signalslot.signals.Signal0;
 import cn.qiditu.signalslot.slots.Slot0;
+import cn.qiditu.signalslot.slots.Slot1;
 import cn.qiditu.utility.Lazy;
 import cn.qiditu.utility.Timer;
 
 public class LocationRecordService extends Service {
+
+    private final WriteProperty<Float> writeLastNotifyDistance = new WriteProperty<>();
+    private final Property<Float> lastNotifyDistance = new Property<>(writeLastNotifyDistance, 0f);
+    private static final float notifyDistance = 3000f;
 
     public LocationRecordService() {
         timer.writeInterval.set(2000);
@@ -40,6 +49,48 @@ public class LocationRecordService extends Service {
             }
         });
         timer.timeOut.connect(gpsLocationTimeOut);
+        distance.changed.connect(new Slot1<Float>() {
+            @Override
+            public void accept(@Nullable Float aFloat) {
+                final float value = aFloat == null ? 0f : aFloat;
+                Float lastNotifyDistance = LocationRecordService.this.lastNotifyDistance.get();
+                final float lastDistance = lastNotifyDistance == null ? 0f : lastNotifyDistance;
+                if((int)(value / LocationRecordService.notifyDistance)
+                        > (int)(lastDistance / LocationRecordService.notifyDistance)) {
+                    writeLastNotifyDistance.set(value);
+                    LocationRecordService.this.notifyDistance();
+                }
+            }
+        });
+    }
+
+    private final Lazy<NotificationManager> notificationManagerLazy =
+            new Lazy<>(new Lazy.LazyFunc<NotificationManager>() {
+                @NonNull
+                @Override
+                public NotificationManager init() {
+                    return (NotificationManager)LocationRecordService.this
+                            .getSystemService(NOTIFICATION_SERVICE);
+                }
+            });
+
+    @SuppressWarnings("deprecation")
+    private void notifyDistance() {
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setWhen(System.currentTimeMillis());
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        Intent intent = new Intent(this.getApplicationContext(), MainActivity.class);
+        builder.setContentIntent(
+                    PendingIntent.getActivity(this.getApplicationContext(), 0, intent, 0));
+        builder.setContentText(this.getString(R.string.movingDistanceMoreThanThreeKM));
+        builder.setAutoCancel(true);
+        Notification notification;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            notification = builder.build();
+        } else {
+            notification = builder.getNotification();
+        }
+        notificationManagerLazy.get().notify(0, notification);
     }
 
     @Override
@@ -148,7 +199,7 @@ public class LocationRecordService extends Service {
     private Lazy<GnssStatus.Callback> gnssStatusCallback =
             new Lazy<>(new Lazy.LazyFunc<GnssStatus.Callback>() {
         @RequiresApi(api = Build.VERSION_CODES.N)
-        @Nullable
+        @NonNull
         @Override
         public GnssStatus.Callback init() {
             return new GnssStatus.Callback() {
