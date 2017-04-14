@@ -3,6 +3,7 @@ package cn.qiditu.gpsexample;
 import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -78,21 +79,18 @@ public class LocationRecordService extends Service {
         Notification.Builder builder = new Notification.Builder(this);
         builder.setWhen(System.currentTimeMillis());
         builder.setSmallIcon(R.mipmap.ic_launcher);
-//        builder.setAutoCancel(false);
-//        builder.setContentIntent(pendingIntent);
+        Intent intent = new Intent(this.getApplicationContext(), MainActivity.class);
+        builder.setContentIntent(
+                    PendingIntent.getActivity(this.getApplicationContext(), 0, intent, 0));
         builder.setContentText(this.getString(R.string.movingDistanceMoreThanThreeKM));
+        builder.setAutoCancel(true);
         Notification notification;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             notification = builder.build();
         } else {
             notification = builder.getNotification();
         }
-        NotificationManager manager = notificationManagerLazy.get();
-        if(manager != null) {
-            manager.notify(0, notification);
-        }
-//        Vibrator vibrator = (Vibrator) this.getSystemService(Service.VIBRATOR_SERVICE);
-//        vibrator.vibrate(50 * 1000);
+        notificationManagerLazy.get().notify(0, notification);
     }
 
     @Override
@@ -201,7 +199,7 @@ public class LocationRecordService extends Service {
     private Lazy<GnssStatus.Callback> gnssStatusCallback =
             new Lazy<>(new Lazy.LazyFunc<GnssStatus.Callback>() {
         @RequiresApi(api = Build.VERSION_CODES.N)
-        @Nullable
+        @NonNull
         @Override
         public GnssStatus.Callback init() {
             return new GnssStatus.Callback() {
