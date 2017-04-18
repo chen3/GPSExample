@@ -32,5 +32,5 @@ dependencies {
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
     compile 'com.github.hotchemi:permissionsdispatcher:2.3.2'
     annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:2.3.2'
-    compile 'cn.qiditu:property:1.0.0'
+    compile 'cn.qiditu:utility-android:1.0.0'
 }
