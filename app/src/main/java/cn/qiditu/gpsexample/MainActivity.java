@@ -29,8 +29,7 @@ import butterknife.BindString;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import cn.qiditu.property.Property;
-import cn.qiditu.property.WriteProperty;
+import cn.qiditu.property.ReadWriteProperty;
 import cn.qiditu.signalslot.slots.Slot0;
 import cn.qiditu.signalslot.slots.Slot1;
 import permissions.dispatcher.NeedsPermission;
@@ -44,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
     public MainActivity() {
         super();
-        service.changed.connect(new Slot1<LocationRecordService>() {
+        service.changed().connect(new Slot1<LocationRecordService>() {
             @Override
             public void accept(@Nullable LocationRecordService service) {
                 if(service == null) {
@@ -58,8 +57,8 @@ public class MainActivity extends AppCompatActivity {
                                 MainActivity.distanceFormat.format(aFloat == null ? 0 : aFloat));
                     }
                 };
-                service.distance.changed.connect(slotDistance);
-                slotDistance.accept(service.distance.get());
+                service.distance().changed().connect(slotDistance);
+                slotDistance.accept(service.distance().get());
 
                 final Slot1<Boolean> slotIsRunning = new Slot1<Boolean>() {
                     @Override
@@ -67,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
                         MainActivity.this.updateButtonState(aBoolean);
                     }
                 };
-                service.isRunning.changed.connect(slotIsRunning);
-                slotIsRunning.accept(service.isRunning.get());
+                service.isRunning().changed().connect(slotIsRunning);
+                slotIsRunning.accept(service.isRunning().get());
 
                 final Slot1<Integer> slotGpsSatellitesNumber = new Slot1<Integer>() {
                     @Override
@@ -79,8 +78,8 @@ public class MainActivity extends AppCompatActivity {
                         MainActivity.this.gpsSatellitesNumber.setText(str);
                     }
                 };
-                service.gpsSatellitesNumber.changed.connect(slotGpsSatellitesNumber);
-                slotGpsSatellitesNumber.accept(service.gpsSatellitesNumber.get());
+                service.gpsSatellitesNumber().changed().connect(slotGpsSatellitesNumber);
+                slotGpsSatellitesNumber.accept(service.gpsSatellitesNumber().get());
 
                 service.gpsLocationTimeOut.connect(new Slot0() {
                     @Override
@@ -164,8 +163,7 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton(R.string.ok, null);
     }
 
-    private final WriteProperty<LocationRecordService> writeService = new WriteProperty<>();
-    private final Property<LocationRecordService> service = new Property<>(writeService);
+    private final ReadWriteProperty<LocationRecordService> service = new ReadWriteProperty<>();
 
     private ServiceConnection conn = new ServiceConnection() {
         /**
@@ -175,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName name, IBinder service) {
             LocationRecordService tService =
                                 ((LocationRecordService.LocalBinder)service).getService();
-            MainActivity.this.writeService.set(tService);
+            MainActivity.this.service.set(tService);
         }
 
         /**
@@ -183,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
          */
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            writeService.set(null);
+            MainActivity.this.service.set(null);
         }
     };
 
@@ -213,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
             serviceNotFound.show();
             return;
         }
-        Boolean value = tService.isRunning.get();
+        Boolean value = tService.isRunning().get();
         isRunning = value == null ? false : value;
         if(isRunning) {
             tService.stop();

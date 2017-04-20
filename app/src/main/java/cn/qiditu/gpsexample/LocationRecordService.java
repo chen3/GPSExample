@@ -25,8 +25,8 @@ import android.util.Log;
 
 import java.util.Iterator;
 
-import cn.qiditu.property.Property;
-import cn.qiditu.property.WriteProperty;
+import cn.qiditu.property.ReadProperty;
+import cn.qiditu.property.ReadWriteProperty;
 import cn.qiditu.signalslot.signals.Signal0;
 import cn.qiditu.signalslot.slots.Slot0;
 import cn.qiditu.signalslot.slots.Slot1;
@@ -35,13 +35,12 @@ import cn.qiditu.utility.Timer;
 
 public class LocationRecordService extends Service {
 
-    private final WriteProperty<Float> writeLastNotifyDistance = new WriteProperty<>();
-    private final Property<Float> lastNotifyDistance = new Property<>(writeLastNotifyDistance, 0f);
+    private final ReadWriteProperty<Float> lastNotifyDistance = new ReadWriteProperty<>(0f);
     private static final float notifyDistance = 3000f;
 
     public LocationRecordService() {
-        timer.writeInterval.set(2000);
-        timer.writeSingleShot.set(true);
+        timer.interval.set(2000);
+        timer.singleShot.set(true);
         timer.timeOut.connect(new Slot0() {
             @Override
             public void accept() {
@@ -49,7 +48,7 @@ public class LocationRecordService extends Service {
             }
         });
         timer.timeOut.connect(gpsLocationTimeOut);
-        distance.changed.connect(new Slot1<Float>() {
+        distance.changed().connect(new Slot1<Float>() {
             @Override
             public void accept(@Nullable Float aFloat) {
                 final float value = aFloat == null ? 0f : aFloat;
@@ -57,7 +56,7 @@ public class LocationRecordService extends Service {
                 final float lastDistance = lastNotifyDistance == null ? 0f : lastNotifyDistance;
                 if((int)(value / LocationRecordService.notifyDistance)
                         > (int)(lastDistance / LocationRecordService.notifyDistance)) {
-                    writeLastNotifyDistance.set(value);
+                    LocationRecordService.this.lastNotifyDistance.set(value);
                     LocationRecordService.this.notifyDistance();
                 }
             }
@@ -106,11 +105,17 @@ public class LocationRecordService extends Service {
         }
     }
 
-    private final WriteProperty<Boolean> writeIsRunning = new WriteProperty<>();
-    public final Property<Boolean> isRunning = new Property<>(writeIsRunning, false);
+    private final ReadWriteProperty<Boolean> isRunning = new ReadWriteProperty<>(false);
+    @NonNull
+    public ReadProperty<Boolean> isRunning() {
+        return isRunning;
+    }
 
-    private final WriteProperty<Float> writeDistance = new WriteProperty<>();
-    public final Property<Float> distance = new Property<>(writeDistance, 0f);
+    private final ReadWriteProperty<Float> distance = new ReadWriteProperty<>(0f);
+    @NonNull
+    public ReadProperty<Float> distance() {
+        return distance;
+    }
 
     @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     public void startWithNotTimeOut() {
@@ -134,8 +139,8 @@ public class LocationRecordService extends Service {
                 (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         // 获取到GPS_PROVIDER
         lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        writeDistance.set(0f);
-        writeGpsSatellitesNumber.set(0);
+        distance.set(0f);
+        gpsSatellitesNumber.set(0);
         updateLocation(lastLocation);
         // 设置监听器，自动更新的最小时间为间隔N秒(1秒为1*1000，这样写主要为了方便)或最小位移变化超过N米
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0,
@@ -146,7 +151,7 @@ public class LocationRecordService extends Service {
         else {
             locationManager.addGpsStatusListener(gpsStatusListener);
         }
-        writeIsRunning.set(true);
+        isRunning.set(true);
         if(timeOut) {
             timer.start();
         }
@@ -164,11 +169,11 @@ public class LocationRecordService extends Service {
         else {
             locationManager.removeGpsStatusListener(gpsStatusListener);
         }
-        Boolean value = timer.active.get();
+        Boolean value = timer.active().get();
         if(value == null ? false : value) {
             timer.stop();
         }
-        writeIsRunning.set(false);
+        isRunning.set(false);
     }
 
     private void updateLocation(@Nullable Location location) {
@@ -185,16 +190,18 @@ public class LocationRecordService extends Service {
                 float newValue = value == null ? 0 : value;
                 newValue += result[0];
                 lastLocation = location;
-                writeDistance.set(newValue);
+                distance.set(newValue);
             }
         } else {
             Log.i("GPS", "无法获取地理信息");
         }
     }
 
-    private final WriteProperty<Integer> writeGpsSatellitesNumber = new WriteProperty<>();
-    public final Property<Integer> gpsSatellitesNumber =
-                                        new Property<>(writeGpsSatellitesNumber, 0);
+    private final ReadWriteProperty<Integer> gpsSatellitesNumber = new ReadWriteProperty<>(0);
+    @NonNull
+    public ReadProperty<Integer> gpsSatellitesNumber() {
+        return gpsSatellitesNumber;
+    }
 
     private Lazy<GnssStatus.Callback> gnssStatusCallback =
             new Lazy<>(new Lazy.LazyFunc<GnssStatus.Callback>() {
@@ -207,7 +214,7 @@ public class LocationRecordService extends Service {
                 public void onSatelliteStatusChanged(GnssStatus status) {
                     int count = status.getSatelliteCount();
                     Log.i("GnssStatusCallback", String.valueOf(count));
-                    writeGpsSatellitesNumber.set(count);
+                    LocationRecordService.this.gpsSatellitesNumber.set(count);
                 }
             };
         }
@@ -221,7 +228,10 @@ public class LocationRecordService extends Service {
             if(event != GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
                 return;
             }
-            GpsStatus status = ((LocationManager)LocationRecordService.this.getSystemService(Context.LOCATION_SERVICE)).getGpsStatus(null);
+            LocationManager manager =
+                    ((LocationManager)LocationRecordService.this.getSystemService(
+                                                                    Context.LOCATION_SERVICE));
+            GpsStatus status = manager.getGpsStatus(null);
             Iterator<GpsSatellite> i = status.getSatellites().iterator();
             int count = 0;
             while(i.hasNext()) {
@@ -229,7 +239,7 @@ public class LocationRecordService extends Service {
                 i.next();
             }
             Log.i("GnssStatusCallback", String.valueOf(count));
-            writeGpsSatellitesNumber.set(count);
+            LocationRecordService.this.gpsSatellitesNumber.set(count);
         }
     };
 
